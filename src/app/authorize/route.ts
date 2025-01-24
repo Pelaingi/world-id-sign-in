@@ -8,6 +8,8 @@ import { checkFlowType, validateRequestSchema } from "@/api-helpers/utils";
 import { OIDCResponseModeValidation } from "@/api-helpers/validation";
 import { internalRedirect } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
+
 const SUPPORTED_SCOPES = [OIDCScope.OpenID, OIDCScope.Profile, OIDCScope.Email];
 
 const schema = yup.object({
@@ -54,12 +56,15 @@ const schema = yup.object({
       },
     }),
   state: yup.string(),
-  nonce: yup.string().when("response_type", {
-    // NOTE: we only require a nonce for the implicit flow
-    is: (value: string) =>
-      checkFlowType(decodeURIComponent(value)) === OIDCFlowType.Implicit,
-    then: (field) => field.required(ValidationMessage.Required),
-  }),
+  nonce: yup
+    .string()
+    .ensure()
+    .when("response_type", {
+      // NOTE: we only require a nonce for the implicit flow
+      is: (value: string) =>
+        checkFlowType(decodeURIComponent(value)) === OIDCFlowType.Implicit,
+      then: (field) => field.required(ValidationMessage.Required),
+    }),
   response_mode: OIDCResponseModeValidation,
   code_challenge: yup.string().when("code_challenge_method", {
     is: (value: string) => Boolean(value),
@@ -73,7 +78,7 @@ const schema = yup.object({
 
 export const GET = async (req: NextRequest): Promise<NextResponse> => {
   if (
-    !req.cookies.get("web-only") &&
+    new URL(req.url).pathname === "/authorize" && // exclude authorize-web
     req.headers.get("user-agent")?.includes("Mobile") &&
     (req.headers.get("user-agent")?.includes("iPhone") ||
       req.headers.get("user-agent")?.includes("Android"))

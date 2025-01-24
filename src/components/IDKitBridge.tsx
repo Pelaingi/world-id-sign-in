@@ -11,6 +11,8 @@ import {
   IDKitConfig,
   VerificationLevel,
 } from "@worldcoin/idkit-core";
+import clsx from "clsx";
+import { isMobileDevice } from "@/lib/utils";
 
 interface IIDKitBridge {
   nonce: string;
@@ -119,12 +121,6 @@ const IDKitBridge = ({
   ]);
 
   useEffect(() => {
-    const isMobile = window.matchMedia("(max-width: 768px)").matches; // to use the same logic as UI (Tailwind)
-
-    if (isMobile && connectorURI) {
-      window.open(connectorURI, "_blank", "noopener,noreferrer");
-    }
-
     if (connectorURI) {
       setDeeplink(connectorURI);
     }
@@ -143,7 +139,7 @@ const IDKitBridge = ({
   }, [connectorURI, isStaging]);
 
   return (
-    <div className="md:mt-8">
+    <div className="md:mt-8 mt-7">
       {verificationState === VerificationState.WaitingForConnection && (
         <>
           {!connectorURI && <Spinner />}
@@ -154,7 +150,9 @@ const IDKitBridge = ({
                 <>
                   {/* .qr-code className used for remote synthetic tests */}
                   <div
-                    className="hidden md:block qr-code cursor-pointer"
+                    className={clsx("qr-code cursor-pointer max-md:mt-8", {
+                      hidden: isMobileDevice(),
+                    })}
                     onClick={copyLink}
                   >
                     <QRCode data={connectorURI} size={280} />
@@ -216,19 +214,15 @@ const IDKitBridge = ({
               ) : (
                 <>
                   {/* .qr-code className used for remote synthetic tests */}
-                  <div className="hidden md:block qr-code">
+                  <div
+                    className={clsx("qr-code max-md:mt-8", {
+                      hidden: isMobileDevice(),
+                    })}
+                  >
                     <QRCode data={connectorURI} size={280} />
                   </div>
                 </>
               )}
-
-              <div className="md:hidden mt-10 md:mt-0">
-                <Spinner />
-
-                <div className="text-text-muted pt-4">
-                  Wait a few seconds, automatically opening World App
-                </div>
-              </div>
             </>
           )}
         </>
@@ -240,7 +234,7 @@ const IDKitBridge = ({
 
           {verificationState === VerificationState.PreparingClient && (
             <>
-              <h1 className="font-medium text-3xl mt-12">Loading...</h1>
+              <h1 className="font-medium text-3xl md:mt-12 mt-4">Loading...</h1>
               <div className="text-text-muted text-xl mt-2">
                 Please wait a moment
               </div>

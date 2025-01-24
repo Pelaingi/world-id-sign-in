@@ -5,6 +5,17 @@ import { OIDCResponseMode } from "@/types";
 import { authenticate, authenticateSchema } from "@/lib/authenticate";
 import { internalRedirect } from "@/lib/utils";
 
+function clean(string: string) {
+  // used to sanitize values for the form post response mode
+  return string
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/\//g, "&#x2F;");
+}
+
 /**
  * Receives the ZKP from the frontend, verifies with Developer Portal and redirects the user.
  * NOTE: This is an app internal endpoint (i.e. not called from other apps)
@@ -30,7 +41,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       code: result.code,
       detail: result.detail,
       client_id: parsedParams.client_id,
-      nonce: parsedParams.nonce,
+      nonce: parsedParams.nonce!,
       response_type: parsedParams.response_type,
       ready: "true",
       redirect_uri: parsedParams.redirect_uri,
@@ -64,7 +75,9 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         <form id="formRedirect" method="post" action="${url}">    
           ${Array.from(result.url_params.entries()).map(
             ([key, value]) =>
-              `<input type="hidden" name="${key}" value="${value}" />`
+              `<input type="hidden" name="${clean(key)}" value="${clean(
+                value
+              )}" />`
           )}    
           <noscript>  
             <button type="submit">Submit</button>  
